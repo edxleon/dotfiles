@@ -1,28 +1,30 @@
-# Dotfiles (Linux)
+# Dotfiles
 
-zsh · tmux · vim/neovim · starship – one Gruvbox look across shell, prompt, multiplexer and editor.
-Linux counterpart of [dotfiles-windows](https://github.com/edxleon/dotfiles-windows): same tools, aliases and key bindings.
-
-Target: Debian/Ubuntu, including WSL. The configs work on any Linux (and macOS);
-only the package step needs `apt`.
+zsh · tmux · vim · starship – fast, few moving parts, one Gruvbox look.
+**macOS first** (Homebrew), Debian/Ubuntu/WSL second (apt).
+Sibling of [dotfiles-windows](https://github.com/edxleon/dotfiles-windows): same tools, aliases and key bindings.
 
 ## Install
 
 ```sh
-git clone https://github.com/edxleon/dotfiles.git ~/dotfiles
+git clone https://github.com/edxleon/dotfiles.git ~/dotfiles   # any path works
 cd ~/dotfiles
 ./install.sh
 exec zsh
 ```
 
-Options: `--no-packages` (links + plugins only, no sudo), `--no-plugins`, `--no-chsh`.
+Options: `--no-packages` (links + plugins only), `--no-plugins`, `--no-chsh`.
 
-`install.sh` is idempotent. Configs are **symlinks** into this repo, so `git pull` applies
-changes on the next shell start. Existing files are moved to `~/.dotfiles-backup/<timestamp>/`,
-never deleted. Nothing is piped into a shell: packages come from apt; if apt has no starship,
-the release binary is downloaded and verified against its sha256.
+- **macOS:** packages from `./Brewfile` (Homebrew must already be installed).
+- **Linux:** packages via apt; starship falls back to its release binary, verified against its sha256.
+- Configs are **symlinks** into this repo, so `git pull` takes effect on the next shell start.
+- Existing files are moved to `~/.dotfiles-backup/<timestamp>/`, never deleted. Rerunning is safe.
 
-For prompt icons, set your terminal font to a Nerd Font (e.g. JetBrainsMono Nerd Font).
+### After installing (macOS Terminal)
+
+Settings → Profiles → your profile:
+- **Text → Font:** *JetBrainsMono Nerd Font* (icons in prompt and `ls`).
+- **Keyboard → "Use Option as Meta key"** (needed for the Alt shortcuts below).
 
 ## What goes where
 
@@ -31,22 +33,29 @@ For prompt icons, set your terminal font to a Nerd Font (e.g. JetBrainsMono Nerd
 | `zsh/zshrc` | `~/.zshrc` |
 | `tmux/tmux.conf` | `~/.config/tmux/tmux.conf` |
 | `vim/vimrc` | `~/.vimrc` |
-| `nvim/init.vim` | `~/.config/nvim/init.vim` (loads `~/.vimrc`) |
 | `starship/starship.toml` | `~/.config/starship.toml` |
 
-Machine-specific, untracked overrides: `~/.zshrc.local`, `~/.config/tmux/local.conf`.
+Untracked, machine-specific overrides: `~/.zshrc.local`, `~/.vimrc.local`, `~/.config/tmux/local.conf`.
+
+## Design
+
+- **Built-ins before plugins.** No zsh framework, no tmux plugins, 4 vim plugins.
+  Vim 9.1 brings comments (`gc`), auto-clearing search highlight and a Gruvbox-like colour scheme (`retrobox`).
+- **Fast startup.** Cached completion (full check once a day), one process per tool init,
+  starship with only the modules in use and a 300 ms command timeout.
+- **AI-safe.** When `CLAUDECODE` is set (Claude Code), `.zshrc` stops after PATH/EDITOR,
+  so agents get a plain shell without `mv -i` or `cat=bat` surprises.
 
 ## Tools
 
 | Tool | Purpose |
 |---|---|
-| [starship](https://starship.rs) | prompt (Gruvbox) |
-| [fzf](https://github.com/junegunn/fzf) | `Ctrl+T` files, `Ctrl+R` history, `Alt+C` cd |
+| [starship](https://starship.rs) | prompt |
+| [fzf](https://github.com/junegunn/fzf) | `Ctrl+T` files · `Ctrl+R` history · `Alt+C` cd |
 | [zoxide](https://github.com/ajeetdsouza/zoxide) | `z <part-of-path>` |
-| [eza](https://github.com/eza-community/eza) | `ls` with icons and git status |
-| [bat](https://github.com/sharkdp/bat) | `cat` with syntax highlighting |
-| [ripgrep](https://github.com/BurntSushi/ripgrep), [fd](https://github.com/sharkdp/fd) | fast grep / find |
-| zsh-autosuggestions, zsh-syntax-highlighting | fish-like shell |
+| [eza](https://github.com/eza-community/eza) · [bat](https://github.com/sharkdp/bat) | `ls` with icons + git · `cat` with highlighting |
+| [ripgrep](https://github.com/BurntSushi/ripgrep) · [fd](https://github.com/sharkdp/fd) | fast grep · fast find |
+| zsh-autosuggestions · zsh-syntax-highlighting | suggestions as you type · command colouring |
 
 ## Shell
 
@@ -54,7 +63,7 @@ Machine-specific, untracked overrides: `~/.zshrc.local`, `~/.config/tmux/local.c
 |---|---|
 | `↑` / `↓` | history search by what you've typed |
 | `Tab` | completion menu |
-| `Ctrl+F`, `Ctrl+←/→` | word jumps |
+| `→` / `Ctrl+F` | accept suggestion / accept one word |
 
 | Command | Does |
 |---|---|
@@ -63,48 +72,39 @@ Machine-specific, untracked overrides: `~/.zshrc.local`, `~/.config/tmux/local.c
 | `mkcd dir`, `up 3` | create + enter / go up n levels |
 | `gs`, `glog`, `gpull`, `gpush`, `gco`, `gcb`, `g` | git |
 | `dps`, `dex`, `dlogs`, `dimg`, `dprune` | docker (if installed) |
-| `ports` | listening ports (`ss -tulpn`) |
-| `update` | `apt update && apt upgrade` |
+| `ports` | listening ports |
+| `update` | `brew update && upgrade` / `apt update && upgrade` |
 
 `mv`, `cp` and `ln` ask before overwriting.
 
 ## tmux
 
-Prefix is **`Ctrl+Space`**.
+Prefix is **`Ctrl+Space`**. No plugins.
 
 | Key | Action |
 |---|---|
-| `prefix v` / `prefix h` | split side by side / stacked |
-| `Alt+h/j/k/l` | move between panes – and vim splits |
+| `prefix \|` / `prefix -` | split side by side / stacked (in the current directory) |
+| `Alt+h/j/k/l` | move between panes – and vim splits (`prefix h/j/k/l` also works) |
 | `Alt+1…9` | select window |
-| `Alt+Shift+W/S` | swap pane up/down |
-| `prefix Enter` | copy mode (`v` select, `y` yank) |
+| `prefix Enter` | copy mode: `v` select, `y` copy to system clipboard |
 | `prefix m` | toggle mouse |
 | `prefix r` / `prefix e` | reload config / edit local.conf |
 
-Plugins: sensible, yank, open, resurrect + continuum (sessions survive reboots).
+## vim
 
-## vim / neovim
-
-Leader is **`,`**.
+Leader is **`,`**. Plugins: fzf.vim, vim-tmux-navigator, fugitive (via vim-plug).
 
 | Key | Action |
 |---|---|
-| `,n` | file tree |
 | `,f` / `,b` / `,r` | fzf: files / buffers / ripgrep |
+| `,e` | file tree (built-in netrw) |
 | `,w` | save |
-| `,F` | fix file (ALE) |
-| `[e` / `]e` | previous / next lint error |
-| `,cc` / `,cu` | comment / uncomment |
-| `Ctrl+a/s/d` | resize split |
+| `gcc` / `gc` + motion | toggle comment |
+| `:Git` | fugitive |
 | `,ev` `,et` `,ez` | edit vimrc / tmux.conf / zshrc |
-
-Plugins: nerdtree, fzf.vim, vim-tmux-navigator, easymotion, fugitive, gitgutter, airline,
-gruvbox, surround, nerdcommenter, auto-pairs, polyglot, ALE (lint/fix/LSP completion –
-install linters like `ruff` or `shellcheck` as needed).
 
 ## History
 
 The 2017–2020 version (fish, oh-my-zsh, i3, YouCompleteMe) is in the git history.
-This rewrite replaced fish with zsh, oh-my-zsh with two plain plugins,
-syntastic/YouCompleteMe with ALE, and Tokyo Night with Gruvbox.
+2026 rewrite: fish → zsh, oh-my-zsh → two plain plugins, 17 vim plugins → 4 plus built-ins,
+5 tmux plugins → none, Tokyo Night → Gruvbox, neovim dropped (Vim 9.1 ships with macOS and Debian).

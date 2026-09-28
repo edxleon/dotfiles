@@ -1,12 +1,12 @@
 " ~/.vimrc – managed by github.com/edxleon/dotfiles
-" Also loaded by Neovim via nvim/init.vim. Plugins: vim-plug (installed by install.sh).
+" Vim 9.1+ (ships with macOS and Debian 13). Few plugins, built-ins first.
 
-" ── Bootstrap ────────────────────────────────────────────────────────────────
-set nocompatible
-filetype plugin indent on
-syntax on
+" ── Basics ────────────────────────────────────────────────────────────────────
+" Vim's own sensible defaults (skipped automatically once a ~/.vimrc exists):
+" filetype/syntax on, incsearch, scrolloff, restore cursor position, nrformats …
+unlet! skip_defaults_vim
+source $VIMRUNTIME/defaults.vim
 
-" ── General ───────────────────────────────────────────────────────────────────
 set encoding=utf-8
 set fileformats=unix,dos,mac
 set history=1000
@@ -14,140 +14,79 @@ set hidden
 set updatetime=300
 set number
 set cursorline
-set ruler
 set showcmd
-set noshowmode                  " airline shows the mode
 set title
 set wildmenu
 set wildmode=longest:full,full
 set laststatus=2
-set signcolumn=yes
+set signcolumn=auto
 set backspace=indent,eol,start
-set splitright
-set splitbelow
+set splitright splitbelow
 set mouse=a
 set listchars=tab:▸\ ,trail:·,eol:¬
+set statusline=\ %f\ %m%r%=%y\ \ %l:%c\ \ %p%%\
 
 " System clipboard: X11/Wayland/WSL use '+', macOS uses '*'
 if has('unnamedplus') | set clipboard=unnamedplus | else | set clipboard=unnamed | endif
 
 " Persistent undo, no swap/backup files
-let s:undo = has('nvim') ? stdpath('state') . '/undo' : expand('~/.vim/undo')
-if !isdirectory(s:undo) | call mkdir(s:undo, 'p') | endif
-let &undodir = s:undo
-set undofile
+if !isdirectory(expand('~/.vim/undo')) | call mkdir(expand('~/.vim/undo'), 'p') | endif
+set undodir=~/.vim/undo undofile
 set noswapfile nobackup nowritebackup
 
-" ── Search ────────────────────────────────────────────────────────────────────
+" Search
 set hlsearch incsearch ignorecase smartcase
-nnoremap <silent> <Esc><Esc> :nohlsearch<CR>
 
-" ── Indentation ───────────────────────────────────────────────────────────────
+" Indentation (filetype indent rules take precedence)
 set expandtab tabstop=4 shiftwidth=4 softtabstop=4
-set autoindent smartindent
+set autoindent
 set wrap linebreak
 set scrolloff=5
 
+" Alt+hjkl arrives as Esc-prefix in terminal Vim; short timeout keeps plain Esc instant
+set ttimeout ttimeoutlen=10
+
+" ── Built-in packages (Vim 9.1): gc/gcc comments, auto-clear search highlight ─
+silent! packadd! comment
+silent! packadd! nohlsearch
+
 " ── Leader & mappings ─────────────────────────────────────────────────────────
 let mapleader = ","
-nnoremap <leader>w :w!<CR>
-nnoremap <leader>y "+y
+nnoremap <leader>w :w<CR>
+nnoremap <leader>l :set list!<CR>
+nnoremap <leader>e :Lexplore<CR>
 nnoremap <leader>ev :vsp $MYVIMRC<CR>
 nnoremap <leader>et :vsp ~/.config/tmux/tmux.conf<CR>
 nnoremap <leader>ez :vsp ~/.zshrc<CR>
-nnoremap <leader>l :set list!<CR>
 
-" Resize tmux/vim splits with Ctrl+a/s/d (vim-tmux-resizer); Ctrl+w stays vim's window prefix
-let g:tmux_resizer_no_mappings = 1
-nnoremap <silent> <C-a> :TmuxResizeLeft<CR>
-nnoremap <silent> <C-s> :TmuxResizeDown<CR>
-nnoremap <silent> <C-d> :TmuxResizeRight<CR>
-
-" Move between vim splits and tmux panes with Alt+hjkl (matches tmux.conf)
-let g:tmux_navigator_no_mappings = 1
-nnoremap <silent> <M-h> :TmuxNavigateLeft<CR>
-nnoremap <silent> <M-j> :TmuxNavigateDown<CR>
-nnoremap <silent> <M-k> :TmuxNavigateUp<CR>
-nnoremap <silent> <M-l> :TmuxNavigateRight<CR>
-if !has('nvim')                 " terminal vim receives Alt as Esc-prefix
-  execute "set <M-h>=\eh" | execute "set <M-j>=\ej"
-  execute "set <M-k>=\ek" | execute "set <M-l>=\el"
-  set ttimeout ttimeoutlen=10   " so a plain Esc isn't delayed
-endif
-
-" Restore cursor position when reopening a file
-autocmd BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
-
-" ── Plugins ───────────────────────────────────────────────────────────────────
+" ── Plugins (vim-plug, installed by install.sh) ───────────────────────────────
 if filereadable(expand('~/.vim/autoload/plug.vim'))
-call plug#begin('~/.vim/plugged')
-
-" Navigation
-Plug 'preservim/nerdtree', { 'on': 'NERDTreeToggle' }
-Plug 'junegunn/fzf'
-Plug 'junegunn/fzf.vim'
-Plug 'christoomey/vim-tmux-navigator'
-Plug 'melonmanchan/vim-tmux-resizer'
-Plug 'easymotion/vim-easymotion'
-
-" Git
-Plug 'tpope/vim-fugitive'
-Plug 'airblade/vim-gitgutter'
-
-" UI
-Plug 'vim-airline/vim-airline'
-Plug 'vim-airline/vim-airline-themes'
-Plug 'Yggdroot/indentLine'
-Plug 'morhetz/gruvbox'
-
-" Editing
-Plug 'tpope/vim-surround'
-Plug 'preservim/nerdcommenter'
-Plug 'jiangmiao/auto-pairs'
-
-" Languages, linting & fixing (replaces syntastic, YouCompleteMe, flake8, autopep8)
-Plug 'sheerun/vim-polyglot'
-Plug 'dense-analysis/ale'
-
-call plug#end()
+  call plug#begin('~/.vim/plugged')
+  Plug 'junegunn/fzf'                    " uses the fzf binary from brew/apt
+  Plug 'junegunn/fzf.vim'                " :Files :Buffers :Rg
+  Plug 'christoomey/vim-tmux-navigator'  " Alt+hjkl across vim splits and tmux panes
+  Plug 'tpope/vim-fugitive'              " :Git
+  call plug#end()
 endif
 
-" ── Colors: Gruvbox dark ──────────────────────────────────────────────────────
-if has('termguicolors') | set termguicolors | endif
-set background=dark
-let g:gruvbox_contrast_dark = 'medium'
-silent! colorscheme gruvbox
-
-" ── Airline ───────────────────────────────────────────────────────────────────
-let g:airline_theme = 'gruvbox'
-let g:airline_powerline_fonts = 1
-let g:airline#extensions#tabline#enabled = 1
-
-" ── NERDTree ──────────────────────────────────────────────────────────────────
-nnoremap <leader>n :NERDTreeToggle<CR>
-let NERDTreeShowHidden = 1
-autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 &&
-    \ exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
-
-" ── fzf.vim ───────────────────────────────────────────────────────────────────
+" fzf.vim
 nnoremap <leader>f :Files<CR>
 nnoremap <leader>b :Buffers<CR>
 nnoremap <leader>r :Rg<CR>
 
-" ── NERDCommenter ─────────────────────────────────────────────────────────────
-let g:NERDSpaceDelims = 1
-let g:NERDDefaultAlign = 'left'
-let g:NERDCommentEmptyLines = 1
-let g:NERDTrimTrailingWhitespace = 1
+" vim-tmux-navigator on Alt+hjkl (matches tmux.conf)
+let g:tmux_navigator_no_mappings = 1
+execute "set <M-h>=\eh" | execute "set <M-j>=\ej"
+execute "set <M-k>=\ek" | execute "set <M-l>=\el"
+nnoremap <silent> <M-h> :TmuxNavigateLeft<CR>
+nnoremap <silent> <M-j> :TmuxNavigateDown<CR>
+nnoremap <silent> <M-k> :TmuxNavigateUp<CR>
+nnoremap <silent> <M-l> :TmuxNavigateRight<CR>
 
-" ── IndentLine ────────────────────────────────────────────────────────────────
-let g:indentLine_fileTypeExclude = ['tex', 'json', 'markdown']
+" ── Colors: retrobox (built-in gruvbox look, matches tmux + starship) ─────────
+if has('termguicolors') | set termguicolors | endif
+set background=dark
+silent! colorscheme retrobox
 
-" ── ALE: lint on save, fix with <leader>F, LSP completion where available ─────
-let g:ale_linters = { 'python': ['ruff'], 'sh': ['shellcheck'] }
-let g:ale_fixers  = { '*': ['remove_trailing_lines', 'trim_whitespace'], 'python': ['ruff_format'] }
-let g:ale_python_ruff_options = '--line-length 120'
-let g:ale_completion_enabled = 1
-nnoremap <leader>F :ALEFix<CR>
-nmap <silent> [e <Plug>(ale_previous_wrap)
-nmap <silent> ]e <Plug>(ale_next_wrap)
+" ── Machine-specific overrides (not tracked) ──────────────────────────────────
+if filereadable(expand('~/.vimrc.local')) | source ~/.vimrc.local | endif

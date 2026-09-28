@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
-# Dotfiles installer for Debian/Ubuntu (incl. WSL). Idempotent – safe to run again after `git pull`.
+# Dotfiles installer – macOS (Homebrew) first, Debian/Ubuntu/WSL (apt) second.
+# Idempotent – safe to run again after `git pull`.
 #
 #   ./install.sh                 packages + links + plugins + default shell
-#   ./install.sh --no-packages   only links + plugins (no sudo needed)
-#   ./install.sh --no-plugins    skip vim-plug / tpm
+#   ./install.sh --no-packages   only links + plugins (no brew/sudo)
+#   ./install.sh --no-plugins    skip vim-plug
 #   ./install.sh --no-chsh       don't change the login shell
 #
 # Existing files are never deleted: they're moved to ~/.dotfiles-backup/<timestamp>/.
-# Nothing is piped into a shell: packages come from apt; starship (if apt has none)
-# comes from its GitHub release and is checked against the published sha256.
+# Nothing is piped into a shell: macOS packages come from ./Brewfile, Linux packages from apt;
+# starship on Linux (if apt has none) comes from its GitHub release, checked against its sha256.
 set -euo pipefail
 
 DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -21,7 +22,7 @@ for arg in "$@"; do
     --no-packages) DO_PACKAGES=0 ;;
     --no-plugins)  DO_PLUGINS=0 ;;
     --no-chsh)     DO_CHSH=0 ;;
-    -h|--help)     sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help)     sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown option: $arg" >&2; exit 1 ;;
   esac
 done
@@ -72,17 +73,29 @@ add_eza_repo() {
   ok "eza apt repo added"
 }
 
-if [ "$DO_PACKAGES" = 1 ]; then
-  step "Packages"
+OS="$(uname -s)"
+
+if [ "$DO_PACKAGES" = 1 ] && [ "$OS" = "Darwin" ]; then
+  step "Packages (Homebrew)"
+  if ! command -v brew >/dev/null; then
+    warn "Homebrew missing – install it from https://brew.sh, then rerun (or use --no-packages)"
+  elif brew bundle check --file="$DOTFILES/Brewfile" >/dev/null 2>&1; then
+    skip "everything in Brewfile present"
+  else
+    brew bundle install --file="$DOTFILES/Brewfile"
+    ok "Brewfile installed"
+  fi
+elif [ "$DO_PACKAGES" = 1 ]; then
+  step "Packages (apt)"
   if ! command -v apt-get >/dev/null; then
     warn "no apt-get – package install supports Debian/Ubuntu only. Install manually:"
-    warn "zsh tmux vim neovim git fzf zoxide bat eza ripgrep fd starship zsh-autosuggestions zsh-syntax-highlighting"
+    warn "zsh tmux vim git fzf zoxide bat eza ripgrep fd starship zsh-autosuggestions zsh-syntax-highlighting"
   elif [ "$SUDO" = "none" ]; then
     warn "no sudo – skipping packages (rerun as root or with --no-packages)"
   else
     $SUDO apt-get update -qq
     for p in curl ca-certificates; do installed "$p" || $SUDO apt-get install -y -qq "$p" >/dev/null; done
-    wanted=(zsh tmux vim neovim git curl ca-certificates fzf zoxide bat ripgrep fd-find
+    wanted=(zsh tmux vim git curl ca-certificates fzf zoxide bat ripgrep fd-find
             zsh-autosuggestions zsh-syntax-highlighting)
     available eza || add_eza_repo
     wanted+=(eza)
@@ -128,7 +141,6 @@ link() {
 
 link zsh/zshrc              "$HOME/.zshrc"
 link vim/vimrc              "$HOME/.vimrc"
-link nvim/init.vim          "$HOME/.config/nvim/init.vim"
 link tmux/tmux.conf         "$HOME/.config/tmux/tmux.conf"
 link starship/starship.toml "$HOME/.config/starship.toml"
 
@@ -146,28 +158,24 @@ if [ "$DO_PLUGINS" = 1 ]; then
     ok "vim-plug installed"
   fi
   if command -v vim >/dev/null; then
-    vim -Es -u "$HOME/.vimrc" +PlugInstall +qall </dev/null >/dev/null 2>&1 || true
-    ok "vim plugins installed/updated"
+    # PlugClean! removes plugins no longer listed in the vimrc
+    vim -Es -u "$HOME/.vimrc" +'PlugClean!' +PlugInstall +qall </dev/null >/dev/null 2>&1 || true
+    ok "vim plugins installed/updated/cleaned"
   fi
-
-  TPM="$HOME/.config/tmux/plugins/tpm"
-  if [ -d "$TPM" ]; then
-    skip "tpm present"
-  else
-    git clone -q --depth 1 https://github.com/tmux-plugins/tpm "$TPM"
-    ok "tpm installed"
-  fi
-  if command -v tmux >/dev/null; then
-    "$TPM/bin/install_plugins" >/dev/null 2>&1 || warn "tmux plugins: run prefix + I inside tmux"
-    ok "tmux plugins installed"
-  fi
+  # tmux needs no plugins; a leftover tpm dir from older versions is unused
+  if [ -d "$HOME/.config/tmux/plugins" ]; then warn "~/.config/tmux/plugins is unused now – remove it if you like"; fi
 fi
 
 # ── Login shell ───────────────────────────────────────────────────────────────
 if [ "$DO_CHSH" = 1 ] && command -v zsh >/dev/null; then
   step "Login shell"
   zsh_path="$(command -v zsh)"
-  if [ "$(getent passwd "$USER" | cut -d: -f7)" = "$zsh_path" ]; then
+  if [ "$OS" = "Darwin" ]; then
+    current_shell="$(dscl . -read "/Users/$USER" UserShell | awk '{print $2}')"
+  else
+    current_shell="$(getent passwd "$USER" | cut -d: -f7)"
+  fi
+  if [ "$current_shell" = "$zsh_path" ]; then
     skip "zsh is already the login shell"
   elif chsh -s "$zsh_path"; then
     ok "login shell → zsh (takes effect at next login)"

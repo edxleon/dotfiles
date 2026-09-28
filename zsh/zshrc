@@ -13,9 +13,20 @@ typeset -U path
 path=(~/.local/bin $path)
 export EDITOR=vim VISUAL=vim PAGER=less LESS=-R
 
+# AI agents (Claude Code sets CLAUDECODE=1) get a plain shell: no aliases like
+# mv -i / cat=bat that would block on prompts or change command output.
+[[ -n $CLAUDECODE ]] && return
+
 # ── Completion ────────────────────────────────────────────────────────────────
-mkdir -p ~/.cache/zsh
-autoload -Uz compinit && compinit -d ~/.cache/zsh/zcompdump
+[[ -d ~/.cache/zsh ]] || mkdir -p ~/.cache/zsh
+autoload -Uz compinit
+_zcd=~/.cache/zsh/zcompdump
+if [[ -f $_zcd && -z $_zcd(N.mh+24) ]]; then
+  compinit -C -d $_zcd                                     # fast path: dump younger than 24 h
+else
+  compinit -d $_zcd                                        # full check (compaudit) once a day
+fi
+unset _zcd
 zstyle ':completion:*' menu select                         # Tab cycles through a menu
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'     # case-insensitive
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
@@ -29,7 +40,7 @@ bindkey '^[[A' up-line-or-beginning-search                 # ↑ history search 
 bindkey '^[OA' up-line-or-beginning-search
 bindkey '^[[B' down-line-or-beginning-search               # ↓
 bindkey '^[OB' down-line-or-beginning-search
-bindkey '^F' forward-word
+bindkey '^F' forward-word                                  # with a suggestion: accept one word (→ accepts all)
 bindkey '^[[1;5C' forward-word                             # Ctrl+→
 bindkey '^[[1;5D' backward-word                            # Ctrl+←
 [[ -t 0 ]] && stty -ixon                                   # free Ctrl+S for vim/tmux
@@ -47,17 +58,16 @@ if (( $+commands[fd] || $+commands[fdfind] )); then
   unset _fd
 fi
 if (( $+commands[fzf] )); then
-  if fzf --zsh &>/dev/null; then
-    source <(fzf --zsh)                                    # fzf ≥ 0.48
-  else
+  _fzf_init="$(fzf --zsh 2>/dev/null)"                     # fzf ≥ 0.48, one process
+  if [[ -n $_fzf_init ]]; then
+    eval "$_fzf_init"
+  else                                                     # older fzf (Debian 12)
     for f in /usr/share/doc/fzf/examples/{key-bindings,completion}.zsh; do
       [[ -r $f ]] && source $f
     done
   fi
+  unset _fzf_init
 fi
-
-# ── zoxide (z <part-of-path>) ─────────────────────────────────────────────────
-(( $+commands[zoxide] )) && eval "$(zoxide init zsh)"
 
 # ── Aliases ───────────────────────────────────────────────────────────────────
 alias ..='cd ..'
@@ -66,7 +76,11 @@ alias ....='cd ../../..'
 alias mv='mv -i' cp='cp -i' ln='ln -i'                     # ask before overwriting
 alias h='history'
 alias v='vim'
-alias ports='ss -tulpn'
+if [[ $OSTYPE == darwin* ]]; then
+  alias ports='sudo lsof -nP -iTCP -sTCP:LISTEN'
+else
+  alias ports='ss -tulpn'
+fi
 
 if (( $+commands[eza] )); then
   alias ls='eza --icons --group-directories-first'
@@ -94,7 +108,11 @@ if (( $+commands[docker] )); then
   alias dprune='docker system prune -af'
 fi
 
-(( $+commands[apt] )) && alias update='sudo apt update && sudo apt upgrade'
+if (( $+commands[apt] )); then
+  alias update='sudo apt update && sudo apt upgrade'
+elif (( $+commands[brew] )); then
+  alias update='brew update && brew upgrade'
+fi
 
 # ── Functions ─────────────────────────────────────────────────────────────────
 mkcd() { mkdir -p -- "$1" && cd -- "$1"; }                 # create dir and enter it
@@ -102,6 +120,9 @@ up()   { cd "$(printf '../%.0s' $(seq 1 ${1:-1}))"; }       # up 3 → cd ../../
 
 # ── Prompt ────────────────────────────────────────────────────────────────────
 (( $+commands[starship] )) && eval "$(starship init zsh)"
+
+# ── zoxide (z <part-of-path>) – init after other prompt hooks, per its docs ────
+(( $+commands[zoxide] )) && eval "$(zoxide init zsh)"
 
 # ── Plugins (last: syntax highlighting must be sourced at the very end) ───────
 for dir in /usr/share /usr/share/zsh/plugins /opt/homebrew/share /usr/local/share; do
