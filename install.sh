@@ -145,6 +145,7 @@ link zsh/zshrc              "$HOME/.zshrc"
 link vim/vimrc              "$HOME/.vimrc"
 link tmux/tmux.conf         "$HOME/.config/tmux/tmux.conf"
 link starship/starship.toml "$HOME/.config/starship.toml"
+link ghostty/config         "$HOME/.config/ghostty/config"
 
 # tmux reads ~/.tmux.conf before ~/.config/tmux/tmux.conf – move an old one out of the way
 if [ -e "$HOME/.tmux.conf" ] || [ -L "$HOME/.tmux.conf" ]; then backup "$HOME/.tmux.conf"; fi

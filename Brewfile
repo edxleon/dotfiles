@@ -12,4 +12,5 @@ brew "tmux"                      # terminal multiplexer
 brew "zsh-autosuggestions"       # fish-like suggestions
 brew "zsh-syntax-highlighting"   # command highlighting
 
+cask "ghostty"                          # terminal: GPU-fast, draws powerline/pill glyphs pixel-exact
 cask "font-jetbrains-mono-nerd-font"   # icons in prompt and eza

@@ -1,0 +1,22 @@
+# ~/.config/ghostty/config – managed by github.com/edxleon/dotfiles
+# Ghostty draws powerline/box glyphs itself, so the tmux pills line up pixel-exact.
+# All options: `ghostty +show-config --default --docs`
+
+# Look – built-in theme, identical to the palette used by tmux, starship and vim
+theme = Gruvbox Dark
+font-family = JetBrainsMono Nerd Font
+font-size = 14
+window-padding-x = 10
+window-padding-y = 8
+window-padding-balance = true
+window-width = 120
+window-height = 36
+
+# Keys – Option acts as Alt/Meta (tmux Alt+hjkl, Alt+1…9, fzf Alt+C)
+macos-option-as-alt = true
+
+# Behaviour
+mouse-hide-while-typing = true
+# tmux keeps the session, so closing a window loses nothing – no confirmation dialog
+confirm-close-surface = false
+shell-integration-features = no-cursor,sudo,title
