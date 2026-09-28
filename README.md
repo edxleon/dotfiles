@@ -89,6 +89,10 @@ Untracked, machine-specific overrides: `~/.zshrc.local`, `~/.vimrc.local`, `~/.c
 
 Prefix is **`Ctrl+Space`**. No plugins.
 
+**Look:** transparent status bar with rounded Gruvbox "pills" (Nerd Font caps `U+E0B6`/`U+E0B4`):
+session (orange, turns yellow while the prefix is pressed), active window (yellow), time and host.
+Inactive windows are plain grey text. Popups get rounded borders.
+
 **Starts automatically:** every terminal window attaches to the session `main`
 (`tmux new -A -s main`), so windows and panes survive closing the terminal.
 `prefix d` detaches and closes the window; the session keeps running.
