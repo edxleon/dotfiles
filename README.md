@@ -103,7 +103,7 @@ Turn it off on a machine with `export NO_TMUX_AUTOSTART=1` in `~/.zshenv`.
 
 | Key | Action |
 |---|---|
-| `prefix \|` / `prefix -` | split side by side / stacked (in the current directory) |
+| `prefix v` (or `\|`) / `prefix -` | split side by side / stacked (in the current directory) |
 | `Alt+h/j/k/l` | move between panes – and vim splits (`prefix h/j/k/l` also works) |
 | `Alt+1…9` | select window |
 | `prefix Enter` | copy mode: `v` select, `y` copy to system clipboard |
