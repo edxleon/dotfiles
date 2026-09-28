@@ -6,6 +6,7 @@
 #   ./install.sh --no-packages   only links + plugins (no brew/sudo)
 #   ./install.sh --no-plugins    skip vim-plug
 #   ./install.sh --no-chsh       don't change the login shell
+#   ./install.sh --no-terminal   macOS: leave Terminal.app profile/font alone
 #
 # Existing files are never deleted: they're moved to ~/.dotfiles-backup/<timestamp>/.
 # Nothing is piped into a shell: macOS packages come from ./Brewfile, Linux packages from apt;
@@ -15,14 +16,15 @@ set -euo pipefail
 DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export PATH="$HOME/.local/bin:$PATH"          # see tools installed here by earlier runs
 BACKUP="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
-DO_PACKAGES=1 DO_PLUGINS=1 DO_CHSH=1
+DO_PACKAGES=1 DO_PLUGINS=1 DO_CHSH=1 DO_TERMINAL=1
 
 for arg in "$@"; do
   case "$arg" in
     --no-packages) DO_PACKAGES=0 ;;
     --no-plugins)  DO_PLUGINS=0 ;;
     --no-chsh)     DO_CHSH=0 ;;
-    -h|--help)     sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --no-terminal) DO_TERMINAL=0 ;;
+    -h|--help)     sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown option: $arg" >&2; exit 1 ;;
   esac
 done
@@ -147,6 +149,39 @@ link starship/starship.toml "$HOME/.config/starship.toml"
 # tmux reads ~/.tmux.conf before ~/.config/tmux/tmux.conf – move an old one out of the way
 if [ -e "$HOME/.tmux.conf" ] || [ -L "$HOME/.tmux.conf" ]; then backup "$HOME/.tmux.conf"; fi
 
+# ── macOS Terminal.app: Nerd Font active + Gruvbox profile as default ─────────
+font_visible() {
+  [ "$(osascript -l JavaScript -e 'ObjC.import("AppKit"); $.NSFont.fontWithNameSize("JetBrainsMonoNFM-Regular", 13).isNil() ? "no" : "yes"' 2>/dev/null)" = "yes" ]
+}
+if [ "$OS" = "Darwin" ] && [ "$DO_TERMINAL" = 1 ]; then
+  step "Terminal.app"
+  if font_visible; then
+    skip "JetBrainsMono Nerd Font active"
+  elif ls "$HOME/Library/Fonts"/JetBrainsMonoNerdFont*.ttf >/dev/null 2>&1; then
+    # macOS doesn't always pick up fonts dropped into ~/Library/Fonts; fontd rescans on restart
+    killall fontd 2>/dev/null || true
+    sleep 3
+    if font_visible; then ok "Nerd Font activated (fontd rescan)"; else warn "Nerd Font files present but not active – open them once in Font Book"; fi
+  else
+    warn "JetBrainsMono Nerd Font missing – brew install --cask font-jetbrains-mono-nerd-font"
+  fi
+
+  if [ "$(osascript -e 'tell application "Terminal" to exists settings set "Gruvbox"' 2>/dev/null)" = "true" ]; then
+    skip "profile Gruvbox present"
+  else
+    open "$DOTFILES/macos/terminal/Gruvbox.terminal"   # Terminal's own import; opens a preview window
+    sleep 2
+    ok "profile Gruvbox imported"
+  fi
+  if [ "$(osascript -e 'tell application "Terminal" to name of default settings' 2>/dev/null)" = "Gruvbox" ]; then
+    skip "Gruvbox is the default profile"
+  else
+    osascript -e 'tell application "Terminal" to set default settings to settings set "Gruvbox"' \
+              -e 'tell application "Terminal" to set startup settings to settings set "Gruvbox"' >/dev/null
+    ok "Gruvbox set as default + startup profile"
+  fi
+fi
+
 # ── Plugins ───────────────────────────────────────────────────────────────────
 if [ "$DO_PLUGINS" = 1 ]; then
   step "Plugins"
@@ -185,4 +220,4 @@ if [ "$DO_CHSH" = 1 ] && command -v zsh >/dev/null; then
 fi
 
 printf '\n\033[32mDone.\033[0m Start a new shell: exec zsh\n'
-printf '\033[90mTerminal font: a Nerd Font (e.g. JetBrainsMono Nerd Font) for prompt icons.\033[0m\n'
+[ "$(uname -s)" = "Darwin" ] || printf '\033[90mTerminal font: a Nerd Font (e.g. JetBrainsMono Nerd Font) for prompt icons.\033[0m\n'

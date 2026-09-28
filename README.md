@@ -13,18 +13,25 @@ cd ~/dotfiles
 exec zsh
 ```
 
-Options: `--no-packages` (links + plugins only), `--no-plugins`, `--no-chsh`.
+Options: `--no-packages` (links + plugins only), `--no-plugins`, `--no-chsh`, `--no-terminal`.
 
 - **macOS:** packages from `./Brewfile` (Homebrew must already be installed).
 - **Linux:** packages via apt; starship falls back to its release binary, verified against its sha256.
 - Configs are **symlinks** into this repo, so `git pull` takes effect on the next shell start.
 - Existing files are moved to `~/.dotfiles-backup/<timestamp>/`, never deleted. Rerunning is safe.
 
-### After installing (macOS Terminal)
+### macOS Terminal.app
 
-Settings → Profiles → your profile:
-- **Text → Font:** *JetBrainsMono Nerd Font* (icons in prompt and `ls`).
-- **Keyboard → "Use Option as Meta key"** (needed for the Alt shortcuts below).
+`install.sh` also sets up Terminal.app:
+- makes sure **JetBrainsMono Nerd Font** is active (macOS sometimes ignores fonts dropped into
+  `~/Library/Fonts` until the font service rescans),
+- imports the **Gruvbox** profile (`macos/terminal/Gruvbox.terminal`) and makes it the default:
+  same palette as tmux/starship/vim, Nerd Font 14 pt, "Use Option as Meta key" on (Alt shortcuts), no bell.
+
+Change the profile by editing `macos/terminal/make-profile.js`, then
+`osascript -l JavaScript macos/terminal/make-profile.js`, delete the old profile in
+Terminal → Settings → Profiles, and rerun `./install.sh --no-packages`.
+Other terminals (Ghostty, iTerm2, WezTerm): pick a Gruvbox Dark theme and the Nerd Font there.
 
 ## What goes where
 
@@ -34,6 +41,7 @@ Settings → Profiles → your profile:
 | `tmux/tmux.conf` | `~/.config/tmux/tmux.conf` |
 | `vim/vimrc` | `~/.vimrc` |
 | `starship/starship.toml` | `~/.config/starship.toml` |
+| `macos/terminal/Gruvbox.terminal` | imported into Terminal.app (macOS) |
 
 Untracked, machine-specific overrides: `~/.zshrc.local`, `~/.vimrc.local`, `~/.config/tmux/local.conf`.
 
