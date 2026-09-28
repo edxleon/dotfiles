@@ -89,6 +89,12 @@ Untracked, machine-specific overrides: `~/.zshrc.local`, `~/.vimrc.local`, `~/.c
 
 Prefix is **`Ctrl+Space`**. No plugins.
 
+**Starts automatically:** every terminal window attaches to the session `main`
+(`tmux new -A -s main`), so windows and panes survive closing the terminal.
+`prefix d` detaches and closes the window; the session keeps running.
+Not started inside tmux, in VS Code/JetBrains terminals, over SSH, for `zsh -c`, or for AI agents.
+Turn it off on a machine with `export NO_TMUX_AUTOSTART=1` in `~/.zshenv`.
+
 | Key | Action |
 |---|---|
 | `prefix \|` / `prefix -` | split side by side / stacked (in the current directory) |

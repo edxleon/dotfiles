@@ -17,6 +17,16 @@ export EDITOR=vim VISUAL=vim PAGER=less LESS=-R
 # mv -i / cat=bat that would block on prompts or change command output.
 [[ -n $CLAUDECODE ]] && return
 
+# ── tmux autostart: every terminal window joins session "main" ─────────────────
+# Skipped inside tmux, in VS Code/JetBrains terminals and over SSH.
+# Opt out per machine: `export NO_TMUX_AUTOSTART=1` in ~/.zshenv.
+# `exec`: detaching (prefix d) closes the window; the session keeps running.
+if (( $+commands[tmux] )) && [[ -t 0 && -t 1 && -z $ZSH_EXECUTION_STRING \
+      && -z $TMUX && -z $NO_TMUX_AUTOSTART && -z $SSH_CONNECTION \
+      && $TERM_PROGRAM != vscode && $TERMINAL_EMULATOR != JetBrains-JediTerm ]]; then
+  exec tmux new-session -A -s main
+fi
+
 # ── Completion ────────────────────────────────────────────────────────────────
 [[ -d ~/.cache/zsh ]] || mkdir -p ~/.cache/zsh
 autoload -Uz compinit
