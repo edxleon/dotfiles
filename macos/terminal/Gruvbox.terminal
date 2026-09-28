@@ -1365,6 +1365,8 @@
 	</data>
 	<key>FontAntialias</key>
 	<true/>
+	<key>FontHeightSpacing</key>
+	<real>0.94999999999999996</real>
 	<key>ProfileCurrentVersion</key>
 	<real>2.0699999999999998</real>
 	<key>SelectionColor</key>
@@ -1598,6 +1600,8 @@
 	<true/>
 	<key>columnCount</key>
 	<integer>120</integer>
+	<key>dotfilesProfileVersion</key>
+	<integer>3</integer>
 	<key>name</key>
 	<string>Gruvbox</string>
 	<key>rowCount</key>

@@ -3,6 +3,9 @@
 // Colors: gruvbox dark (github.com/morhetz/gruvbox palette). Font: JetBrainsMono Nerd Font Mono.
 ObjC.import('AppKit');
 
+const LINE_SPACING = 0.95;   // Terminal → Profiles → Text → Line spacing (default 1.0); tuned by eye on the 5K display
+const PROFILE_VERSION = 3;    // bump on every change – install.sh re-imports when it differs
+
 function run(argv) {
   const here = $.NSString.stringWithString($.NSProcessInfo.processInfo.environment.objectForKey('PWD').js + '/macos/terminal').js;
   const out = (argv[0] || here) + '/Gruvbox.terminal';
@@ -34,6 +37,7 @@ function run(argv) {
   Object.entries(palette).forEach(([k, v]) => d.setObjectForKey(color(v), k));
   d.setObjectForKey(archive(font), 'Font');
   d.setObjectForKey('Gruvbox', 'name');
+  d.setObjectForKey($.NSNumber.numberWithInt(PROFILE_VERSION), 'dotfilesProfileVersion');
   d.setObjectForKey('Window Settings', 'type');
   d.setObjectForKey($.NSNumber.numberWithDouble(2.07), 'ProfileCurrentVersion');
   d.setObjectForKey($.NSNumber.numberWithBool(true), 'FontAntialias');
@@ -41,6 +45,9 @@ function run(argv) {
   d.setObjectForKey($.NSNumber.numberWithBool(false), 'UseBrightBold');       // bold stays bold, not recoloured
   d.setObjectForKey($.NSNumber.numberWithBool(false), 'Bell');                // no audible bell
   d.setObjectForKey($.NSNumber.numberWithBool(true), 'VisualBellOnlyWhenMuted');
+  // Line spacing: Terminal.app adds leading above each line that powerline caps don't fill,
+  // leaving a step at the top of the tmux pills. < 1.0 trims it.
+  d.setObjectForKey($.NSNumber.numberWithDouble(LINE_SPACING), 'FontHeightSpacing');
   d.setObjectForKey($.NSNumber.numberWithInt(120), 'columnCount');
   d.setObjectForKey($.NSNumber.numberWithInt(36), 'rowCount');
 

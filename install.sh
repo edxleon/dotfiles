@@ -145,7 +145,6 @@ link zsh/zshrc              "$HOME/.zshrc"
 link vim/vimrc              "$HOME/.vimrc"
 link tmux/tmux.conf         "$HOME/.config/tmux/tmux.conf"
 link starship/starship.toml "$HOME/.config/starship.toml"
-link ghostty/config         "$HOME/.config/ghostty/config"
 
 # tmux reads ~/.tmux.conf before ~/.config/tmux/tmux.conf – move an old one out of the way
 if [ -e "$HOME/.tmux.conf" ] || [ -L "$HOME/.tmux.conf" ]; then backup "$HOME/.tmux.conf"; fi
@@ -167,12 +166,35 @@ if [ "$OS" = "Darwin" ] && [ "$DO_TERMINAL" = 1 ]; then
     warn "JetBrainsMono Nerd Font missing – brew install --cask font-jetbrains-mono-nerd-font"
   fi
 
-  if [ "$(osascript -e 'tell application "Terminal" to exists settings set "Gruvbox"' 2>/dev/null)" = "true" ]; then
-    skip "profile Gruvbox present"
+  # Profile: import when missing or when its version differs from the repo's.
+  # Terminal names a re-imported profile "Gruvbox N", so the new one replaces the old one afterwards.
+  profile="$DOTFILES/macos/terminal/Gruvbox.terminal"
+  want="$(plutil -extract dotfilesProfileVersion raw "$profile" 2>/dev/null)"
+  have="$(defaults export com.apple.Terminal - 2>/dev/null | plutil -extract "Window Settings.Gruvbox.dotfilesProfileVersion" raw - 2>/dev/null || true)"
+  if [ -n "$have" ] && [ "$have" = "$want" ]; then
+    skip "profile Gruvbox up to date (v$have)"
   else
-    open "$DOTFILES/macos/terminal/Gruvbox.terminal"   # Terminal's own import; opens a preview window
+    open "$profile"                                    # Terminal's own import; opens a preview window
     sleep 2
-    ok "profile Gruvbox imported"
+    newest="$(osascript -e 'tell application "Terminal" to get name of every settings set' \
+              | tr ',' '\n' | sed 's/^ *//' | grep -E '^Gruvbox( [0-9]+)?$' | sort -t' ' -k2 -n | tail -1)"
+    if [ -n "$newest" ] && [ "$newest" != "Gruvbox" ]; then
+      osascript >/dev/null <<APPLESCRIPT
+tell application "Terminal"
+  set g to settings set "$newest"
+  set default settings to g
+  set startup settings to g
+  repeat with w in windows
+    repeat with t in tabs of w
+      if name of current settings of t is "Gruvbox" then set current settings of t to g
+    end repeat
+  end repeat
+  delete settings set "Gruvbox"
+  set name of g to "Gruvbox"
+end tell
+APPLESCRIPT
+    fi
+    ok "profile Gruvbox imported (v$want)"
   fi
   if [ "$(osascript -e 'tell application "Terminal" to name of default settings' 2>/dev/null)" = "Gruvbox" ]; then
     skip "Gruvbox is the default profile"

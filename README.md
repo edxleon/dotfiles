@@ -20,25 +20,19 @@ Options: `--no-packages` (links + plugins only), `--no-plugins`, `--no-chsh`, `-
 - Configs are **symlinks** into this repo, so `git pull` takes effect on the next shell start.
 - Existing files are moved to `~/.dotfiles-backup/<timestamp>/`, never deleted. Rerunning is safe.
 
-### Terminal: Ghostty (macOS default choice)
-
-[Ghostty](https://ghostty.org) is in the Brewfile and `ghostty/config` is linked to `~/.config/ghostty/config`:
-built-in *Gruvbox Dark* theme (same palette as everything else), JetBrainsMono Nerd Font 14 pt,
-Option as Alt, padding, no close confirmation (tmux keeps the session).
-Ghostty draws powerline glyphs itself, so the rounded tmux pills line up pixel-exact –
-Terminal.app renders them from the font and they end up slightly uneven.
-
-### macOS Terminal.app (fallback)
+### macOS Terminal.app
 
 `install.sh` also sets up Terminal.app:
 - makes sure **JetBrainsMono Nerd Font** is active (macOS sometimes ignores fonts dropped into
   `~/Library/Fonts` until the font service rescans),
 - imports the **Gruvbox** profile (`macos/terminal/Gruvbox.terminal`) and makes it the default:
-  same palette as tmux/starship/vim, Nerd Font 14 pt, "Use Option as Meta key" on (Alt shortcuts), no bell.
+  same palette as tmux/starship/vim, Nerd Font 14 pt, "Use Option as Meta key" on (Alt shortcuts), no bell,
+  line spacing 0.95 so the rounded tmux pills line up at the top (Terminal draws them from the font
+  and adds leading above each line; 1.0 leaves a step, 0.9 overshoots).
 
-Change the profile by editing `macos/terminal/make-profile.js`, then
-`osascript -l JavaScript macos/terminal/make-profile.js`, delete the old profile in
-Terminal → Settings → Profiles, and rerun `./install.sh --no-packages`.
+Change the profile in `macos/terminal/make-profile.js`, bump `PROFILE_VERSION`, run
+`osascript -l JavaScript macos/terminal/make-profile.js`, then `./install.sh --no-packages`:
+it notices the new version, imports it and replaces the old profile (open windows switch over).
 Other terminals (iTerm2, WezTerm, …): pick a Gruvbox Dark theme and the Nerd Font there.
 
 ## What goes where
@@ -49,7 +43,6 @@ Other terminals (iTerm2, WezTerm, …): pick a Gruvbox Dark theme and the Nerd F
 | `tmux/tmux.conf` | `~/.config/tmux/tmux.conf` |
 | `vim/vimrc` | `~/.vimrc` |
 | `starship/starship.toml` | `~/.config/starship.toml` |
-| `ghostty/config` | `~/.config/ghostty/config` |
 | `macos/terminal/Gruvbox.terminal` | imported into Terminal.app (macOS) |
 
 Untracked, machine-specific overrides: `~/.zshrc.local`, `~/.vimrc.local`, `~/.config/tmux/local.conf`.
