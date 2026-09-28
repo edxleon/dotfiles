@@ -1,156 +1,153 @@
-" Save 1,000 items in history
+" ~/.vimrc – managed by github.com/edxleon/dotfiles
+" Also loaded by Neovim via nvim/init.vim. Plugins: vim-plug (installed by install.sh).
+
+" ── Bootstrap ────────────────────────────────────────────────────────────────
+set nocompatible
+filetype plugin indent on
+syntax on
+
+" ── General ───────────────────────────────────────────────────────────────────
+set encoding=utf-8
+set fileformats=unix,dos,mac
 set history=1000
-
-" Show the line and column number of the cursor position
+set hidden
+set updatetime=300
+set number
+set cursorline
 set ruler
-
-" Display the incomplete commands in the bottom right-hand side of your screen.  
 set showcmd
-
-" Display completion matches on your status line
+set noshowmode                  " airline shows the mode
+set title
 set wildmenu
+set wildmode=longest:full,full
+set laststatus=2
+set signcolumn=yes
+set backspace=indent,eol,start
+set splitright
+set splitbelow
+set mouse=a
+set listchars=tab:▸\ ,trail:·,eol:¬
 
-" Show a few lines of context around the cursor
+" System clipboard: X11/Wayland/WSL use '+', macOS uses '*'
+if has('unnamedplus') | set clipboard=unnamedplus | else | set clipboard=unnamed | endif
+
+" Persistent undo, no swap/backup files
+let s:undo = has('nvim') ? stdpath('state') . '/undo' : expand('~/.vim/undo')
+if !isdirectory(s:undo) | call mkdir(s:undo, 'p') | endif
+let &undodir = s:undo
+set undofile
+set noswapfile nobackup nowritebackup
+
+" ── Search ────────────────────────────────────────────────────────────────────
+set hlsearch incsearch ignorecase smartcase
+nnoremap <silent> <Esc><Esc> :nohlsearch<CR>
+
+" ── Indentation ───────────────────────────────────────────────────────────────
+set expandtab tabstop=4 shiftwidth=4 softtabstop=4
+set autoindent smartindent
+set wrap linebreak
 set scrolloff=5
 
-" Highlight search matches
-set hlsearch
+" ── Leader & mappings ─────────────────────────────────────────────────────────
+let mapleader = ","
+nnoremap <leader>w :w!<CR>
+nnoremap <leader>y "+y
+nnoremap <leader>ev :vsp $MYVIMRC<CR>
+nnoremap <leader>et :vsp ~/.config/tmux/tmux.conf<CR>
+nnoremap <leader>ez :vsp ~/.zshrc<CR>
+nnoremap <leader>l :set list!<CR>
 
-" Enable incremental searching
-set incsearch
+" Resize tmux/vim splits with Ctrl+a/s/d (vim-tmux-resizer); Ctrl+w stays vim's window prefix
+let g:tmux_resizer_no_mappings = 1
+nnoremap <silent> <C-a> :TmuxResizeLeft<CR>
+nnoremap <silent> <C-s> :TmuxResizeDown<CR>
+nnoremap <silent> <C-d> :TmuxResizeRight<CR>
 
-" Ignore case when searching
-set ignorecase
+" Move between vim splits and tmux panes with Alt+hjkl (matches tmux.conf)
+let g:tmux_navigator_no_mappings = 1
+nnoremap <silent> <M-h> :TmuxNavigateLeft<CR>
+nnoremap <silent> <M-j> :TmuxNavigateDown<CR>
+nnoremap <silent> <M-k> :TmuxNavigateUp<CR>
+nnoremap <silent> <M-l> :TmuxNavigateRight<CR>
+if !has('nvim')                 " terminal vim receives Alt as Esc-prefix
+  execute "set <M-h>=\eh" | execute "set <M-j>=\ej"
+  execute "set <M-k>=\ek" | execute "set <M-l>=\el"
+  set ttimeout ttimeoutlen=10   " so a plain Esc isn't delayed
+endif
 
-" Override the 'ignorecase' option if the search pattern contains upper case characters.
-set smartcase
+" Restore cursor position when reopening a file
+autocmd BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
 
-" Turn on line numbering
-set number
+" ── Plugins ───────────────────────────────────────────────────────────────────
+if filereadable(expand('~/.vim/autoload/plug.vim'))
+call plug#begin('~/.vim/plugged')
 
-" Don't line wrap mid-word.
-set lbr
+" Navigation
+Plug 'preservim/nerdtree', { 'on': 'NERDTreeToggle' }
+Plug 'junegunn/fzf'
+Plug 'junegunn/fzf.vim'
+Plug 'christoomey/vim-tmux-navigator'
+Plug 'melonmanchan/vim-tmux-resizer'
+Plug 'easymotion/vim-easymotion'
 
-" Copy the indentation from the current line.
-set autoindent
+" Git
+Plug 'tpope/vim-fugitive'
+Plug 'airblade/vim-gitgutter'
 
-" Enable smart autoindenting.
-set smartindent
-
-" Use spaces instead of tabs
-set expandtab
-
-" Enable smart tabs set smarttab
-
-" Make a tab equal to 4 spaces
-set shiftwidth=4
-set tabstop=4
-
-set title
-set nobackup
-set noswapfile
-
-" invisible characters
-set listchars=tab:▸\ ,eol:¬
-
-" let &colorcolumn="80,".join(range(120,999),",")
-
- 
-" Quickly save your file.
-map <leader>w :w!<cr>
-
-let mapleader=","
-
-" Plugin Section 
-set nocompatible              " be iMproved, required
-filetype off                  " required
-
-
-" Vim Plug
-call plug#begin("~/.vim/plugged")
-
-"Airline
+" UI
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
-
-" Git Plugins
-Plug 'tpope/vim-fugitive'
-Plug 'rstacruz/sparkup', {'rtp': 'vim/'}
-
-" Syntax Plugins
-Plug 'vim-scripts/nginx.vim'
-Plug 'markcornick/vim-vagrant'
-Plug 'scrooloose/syntastic'
-Plug 'ekalinin/dockerfile.vim'
-
-" Convinience
-Plug 'valloric/youcompleteme'
-Plug 'godlygeek/tabular'
-Plug 'yggdroot/indentline'
-Plug 'tpope/vim-surround'
-Plug 'christoomey/vim-tmux-navigator'
-Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
-Plug 'scrooloose/nerdcommenter'
-Plug 'myusuf3/numbers.vim'
-Plug 'easymotion/vim-easymotion'
-Plug 'melonmanchan/vim-tmux-resizer'
-Plug 'dhruvasagar/vim-zoom'
-Plug 'vim-scripts/ZoomWin'
-Plug 'majutsushi/tagbar'
-
-" Python
-Plug 'SirVer/ultisnips'
-Plug 'honza/vim-snippets'
-Plug 'nvie/vim-flake8'
-Plug 'tell-k/vim-autopep8'
-" Plugin 'python-mode/python-mode'
-
-" JSON
-Plug 'elzr/vim-json'
-
-" Color Schemes
-Plug 'flazz/vim-colorschemes'
+Plug 'Yggdroot/indentLine'
 Plug 'morhetz/gruvbox'
 
+" Editing
+Plug 'tpope/vim-surround'
+Plug 'preservim/nerdcommenter'
+Plug 'jiangmiao/auto-pairs'
+
+" Languages, linting & fixing (replaces syntastic, YouCompleteMe, flake8, autopep8)
+Plug 'sheerun/vim-polyglot'
+Plug 'dense-analysis/ale'
+
 call plug#end()
+endif
 
-colorscheme gruvbox
+" ── Colors: Gruvbox dark ──────────────────────────────────────────────────────
+if has('termguicolors') | set termguicolors | endif
 set background=dark
-" let g:gruvbox_(option) = '(value)'
+let g:gruvbox_contrast_dark = 'medium'
+silent! colorscheme gruvbox
 
-" TagBar Config
+" ── Airline ───────────────────────────────────────────────────────────────────
+let g:airline_theme = 'gruvbox'
+let g:airline_powerline_fonts = 1
+let g:airline#extensions#tabline#enabled = 1
 
-" IndentLine Config
-let g:indentLine_color_term = 239
-let g:indentLine_char = '¦'
-filetype plugin indent on    " required
+" ── NERDTree ──────────────────────────────────────────────────────────────────
+nnoremap <leader>n :NERDTreeToggle<CR>
+let NERDTreeShowHidden = 1
+autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 &&
+    \ exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
 
-" Syntastic Settings
-set statusline+=%#warningmsg#
-set statusline+=%{syntasticStatuslineFlag()}
-set statusline+=%*
-let g:syntastic_python_pylint_post_args="--max-line-length=120"
+" ── fzf.vim ───────────────────────────────────────────────────────────────────
+nnoremap <leader>f :Files<CR>
+nnoremap <leader>b :Buffers<CR>
+nnoremap <leader>r :Rg<CR>
 
-let g:syntastic_always_populate_loc_list=1
-let g:syntastic_auto_loc_list=1
-let g:syntastic_check_on_open=1
-let g:syntastic_check_on_wq=0
+" ── NERDCommenter ─────────────────────────────────────────────────────────────
+let g:NERDSpaceDelims = 1
+let g:NERDDefaultAlign = 'left'
+let g:NERDCommentEmptyLines = 1
+let g:NERDTrimTrailingWhitespace = 1
 
-" youcompleteme
-let g:ycm_keep_logfiles = 1
-let g:ycm_log_level = 'debug'
+" ── IndentLine ────────────────────────────────────────────────────────────────
+let g:indentLine_fileTypeExclude = ['tex', 'json', 'markdown']
 
-" vim-tmux-resize
-let g:tmux_resizer_no_mappings = 0
-nnoremap <silent> <C-a> :TmuxResizeLeft<cr>
-nnoremap <silent> <C-s> :TmuxResizeDown<cr>
-nnoremap <silent> <C-w> :TmuxResizeUp<cr>
-nnoremap <silent> <C-d> :TmuxResizeRight<cr>
-
-" ultisnips & vim-snippets
-" Trigger configuration. Do not use <tab> if you use https://github.com/Valloric/YouCompleteMe.
-let g:UltiSnipsExpandTrigger="<c-s>"
-let g:UltiSnipsJumpForwardTrigger="<c-d>"
-let g:UltiSnipsJumpBackwardTrigger="<c-a>"
-" If you want :UltiSnipsEdit to split your window.
-let g:UltiSnipsEditSplit="vertical"
+" ── ALE: lint on save, fix with <leader>F, LSP completion where available ─────
+let g:ale_linters = { 'python': ['ruff'], 'sh': ['shellcheck'] }
+let g:ale_fixers  = { '*': ['remove_trailing_lines', 'trim_whitespace'], 'python': ['ruff_format'] }
+let g:ale_python_ruff_options = '--line-length 120'
+let g:ale_completion_enabled = 1
+nnoremap <leader>F :ALEFix<CR>
+nmap <silent> [e <Plug>(ale_previous_wrap)
+nmap <silent> ]e <Plug>(ale_next_wrap)

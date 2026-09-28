@@ -1,110 +1,116 @@
-# If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/bin:/usr/local/bin:$PATH
+# ~/.zshrc – managed by github.com/edxleon/dotfiles (symlink, edit in the repo)
+# Machine-specific additions go in ~/.zshrc.local (not tracked).
 
-# Path to your oh-my-zsh installation.
-  export ZSH=/home/eddie/.oh-my-zsh
+# ── History ───────────────────────────────────────────────────────────────────
+HISTFILE=~/.zsh_history
+HISTSIZE=50000
+SAVEHIST=50000
+setopt share_history hist_ignore_all_dups hist_ignore_space extended_history
+setopt auto_cd auto_pushd pushd_ignore_dups interactive_comments no_beep
 
-# Set name of the theme to load. Optionally, if you set this to "random"
-# it'll load a random theme each time that oh-my-zsh is loaded.
-# See https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
-ZSH_THEME="robbyrussell"
+# ── Environment ───────────────────────────────────────────────────────────────
+typeset -U path
+path=(~/.local/bin $path)
+export EDITOR=vim VISUAL=vim PAGER=less LESS=-R
 
-# Set list of themes to load
-# Setting this variable when ZSH_THEME=random
-# cause zsh load theme from this variable instead of
-# looking in ~/.oh-my-zsh/themes/
-# An empty array have no effect
-# ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
+# ── Completion ────────────────────────────────────────────────────────────────
+mkdir -p ~/.cache/zsh
+autoload -Uz compinit && compinit -d ~/.cache/zsh/zcompdump
+zstyle ':completion:*' menu select                         # Tab cycles through a menu
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'     # case-insensitive
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 
-# Uncomment the following line to use case-sensitive completion.
-# CASE_SENSITIVE="true"
+# ── Key bindings ──────────────────────────────────────────────────────────────
+bindkey -e                                                 # emacs keys (like PSReadLine)
+autoload -Uz up-line-or-beginning-search down-line-or-beginning-search
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+bindkey '^[[A' up-line-or-beginning-search                 # ↑ history search by prefix
+bindkey '^[OA' up-line-or-beginning-search
+bindkey '^[[B' down-line-or-beginning-search               # ↓
+bindkey '^[OB' down-line-or-beginning-search
+bindkey '^F' forward-word
+bindkey '^[[1;5C' forward-word                             # Ctrl+→
+bindkey '^[[1;5D' backward-word                            # Ctrl+←
+[[ -t 0 ]] && stty -ixon                                   # free Ctrl+S for vim/tmux
 
-# Uncomment the following line to use hyphen-insensitive completion. Case
-# sensitive completion must be off. _ and - will be interchangeable.
-# HYPHEN_INSENSITIVE="true"
+# ── Debian/Ubuntu binary names ────────────────────────────────────────────────
+(( $+commands[batcat] )) && ! (( $+commands[bat] )) && alias bat=batcat
+(( $+commands[fdfind] )) && ! (( $+commands[fd] ))  && alias fd=fdfind
 
-# Uncomment the following line to disable bi-weekly auto-update checks.
-# DISABLE_AUTO_UPDATE="true"
+# ── fzf (Ctrl+T files, Ctrl+R history, Alt+C cd) ──────────────────────────────
+export FZF_DEFAULT_OPTS='--height 40% --border rounded --layout reverse'
+if (( $+commands[fd] || $+commands[fdfind] )); then
+  _fd=${commands[fd]:-${commands[fdfind]}}
+  export FZF_DEFAULT_COMMAND="$_fd --type f --hidden --exclude .git"
+  export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+  unset _fd
+fi
+if (( $+commands[fzf] )); then
+  if fzf --zsh &>/dev/null; then
+    source <(fzf --zsh)                                    # fzf ≥ 0.48
+  else
+    for f in /usr/share/doc/fzf/examples/{key-bindings,completion}.zsh; do
+      [[ -r $f ]] && source $f
+    done
+  fi
+fi
 
-# Uncomment the following line to change how often to auto-update (in days).
-# export UPDATE_ZSH_DAYS=13
+# ── zoxide (z <part-of-path>) ─────────────────────────────────────────────────
+(( $+commands[zoxide] )) && eval "$(zoxide init zsh)"
 
-# Uncomment the following line to disable colors in ls.
-# DISABLE_LS_COLORS="true"
+# ── Aliases ───────────────────────────────────────────────────────────────────
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias mv='mv -i' cp='cp -i' ln='ln -i'                     # ask before overwriting
+alias h='history'
+alias v='vim'
+alias ports='ss -tulpn'
 
-# Uncomment the following line to disable auto-setting terminal title.
-# DISABLE_AUTO_TITLE="true"
+if (( $+commands[eza] )); then
+  alias ls='eza --icons --group-directories-first'
+  alias ll='eza -la --icons --group-directories-first --git'
+  alias lt='eza --tree --icons -L 3'
+else
+  alias ls='ls --color=auto'
+  alias ll='ls -lah --color=auto'
+fi
+(( $+commands[bat] || $+commands[batcat] )) && alias cat='bat --paging=never'
 
-# Uncomment the following line to enable command auto-correction.
-# ENABLE_CORRECTION="true"
+alias g='git'
+alias gs='git status'
+alias glog='git log --oneline --graph --decorate -20'
+alias gpull='git pull --rebase'
+alias gpush='git push'
+alias gco='git checkout'
+alias gcb='git checkout -b'
 
-# Uncomment the following line to display red dots whilst waiting for completion.
-# COMPLETION_WAITING_DOTS="true"
+if (( $+commands[docker] )); then
+  alias dps='docker ps'
+  alias dex='docker exec -it'
+  alias dlogs='docker logs -f'
+  alias dimg='docker images'
+  alias dprune='docker system prune -af'
+fi
 
-# Uncomment the following line if you want to disable marking untracked files
-# under VCS as dirty. This makes repository status check for large repositories
-# much, much faster.
-# DISABLE_UNTRACKED_FILES_DIRTY="true"
+(( $+commands[apt] )) && alias update='sudo apt update && sudo apt upgrade'
 
-# Uncomment the following line if you want to change the command execution time
-# stamp shown in the history command output.
-# The optional three formats: "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
-# HIST_STAMPS="mm/dd/yyyy"
+# ── Functions ─────────────────────────────────────────────────────────────────
+mkcd() { mkdir -p -- "$1" && cd -- "$1"; }                 # create dir and enter it
+up()   { cd "$(printf '../%.0s' $(seq 1 ${1:-1}))"; }       # up 3 → cd ../../..
 
-# Would you like to use another custom folder than $ZSH/custom?
-# ZSH_CUSTOM=/path/to/new-custom-folder
+# ── Prompt ────────────────────────────────────────────────────────────────────
+(( $+commands[starship] )) && eval "$(starship init zsh)"
 
-# Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
-# Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
-# Example format: plugins=(rails git textmate ruby lighthouse)
-# Add wisely, as too many plugins slow down shell startup.
-plugins=(
-  git
-  debian
-  z
-  vi-mode
-  tmux
-  cp
-  colorize
-  dircycle
-  github
-  docker
-  docker-compose
-  zsh-autosuggestions
-  tmux
-  # copyfile
-  # copydir
-)
-
-source $ZSH/oh-my-zsh.sh
-
-# User configuration
-
-# export MANPATH="/usr/local/man:$MANPATH"
-
-# You may need to manually set your language environment
-# export LANG=en_US.UTF-8
-
-# Preferred editor for local and remote sessions
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='mvim'
-# fi
-
-# Compilation flags
-# export ARCHFLAGS="-arch x86_64"
-
-# ssh
-# export SSH_KEY_PATH="~/.ssh/rsa_id"
-
-# Set personal aliases, overriding those provided by oh-my-zsh libs,
-# plugins, and themes. Aliases can be placed here, though oh-my-zsh
-# users are encouraged to define aliases within the ZSH_CUSTOM folder.
-# For a full list of active aliases, run `alias`.
-#
-# Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
-
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+# ── Plugins (last: syntax highlighting must be sourced at the very end) ───────
+for dir in /usr/share /usr/share/zsh/plugins /opt/homebrew/share /usr/local/share; do
+  [[ -r $dir/zsh-autosuggestions/zsh-autosuggestions.zsh ]] \
+    && source $dir/zsh-autosuggestions/zsh-autosuggestions.zsh && break
+done
+[[ -r ~/.zshrc.local ]] && source ~/.zshrc.local
+for dir in /usr/share /usr/share/zsh/plugins /opt/homebrew/share /usr/local/share; do
+  [[ -r $dir/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] \
+    && source $dir/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh && break
+done
+unset dir f

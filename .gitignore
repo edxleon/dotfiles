@@ -1,0 +1,9 @@
+# machine-local overrides and secrets never belong here
+*.local
+local.conf
+.env
+.env.*
+*.pem
+*.key
+id_*
+.DS_Store
