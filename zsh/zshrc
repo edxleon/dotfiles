@@ -53,6 +53,9 @@ bindkey '^[OB' down-line-or-beginning-search
 bindkey '^F' forward-word                                  # with a suggestion: accept one word (→ accepts all)
 bindkey '^[[1;5C' forward-word                             # Ctrl+→
 bindkey '^[[1;5D' backward-word                            # Ctrl+←
+for k in '^[[H' '^[OH' '^[[1~'; do bindkey "$k" beginning-of-line; done   # Home (terminal / tmux variants)
+for k in '^[[F' '^[OF' '^[[4~'; do bindkey "$k" end-of-line; done         # End
+bindkey '^[[3~' delete-char                                # Delete (forward)
 [[ -t 0 ]] && stty -ixon                                   # free Ctrl+S for vim/tmux
 
 # ── Debian/Ubuntu binary names ────────────────────────────────────────────────
