@@ -105,6 +105,7 @@ Turn it off on a machine with `export NO_TMUX_AUTOSTART=1` in `~/.zshenv`.
 |---|---|
 | `prefix v` / `prefix h` | split side by side / stacked, in the current directory (`\|` and `-` also work) |
 | `Alt+h/j/k/l` | move between panes – and vim splits (without Meta: `prefix` + arrow keys) |
+| `Ctrl+Alt+h/j/k/l` | resize pane, no prefix – hold to keep resizing |
 | `prefix H/J/K/L` | resize pane by 5 – repeat without prefix: `prefix H H H` (also: drag the border with the mouse) |
 | `Alt+1…9` | select window |
 | `prefix Enter` | copy mode: `v` select, `y` copy to system clipboard |
